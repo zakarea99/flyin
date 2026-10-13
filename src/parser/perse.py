@@ -6,6 +6,7 @@ from src.model.Hub import Hub
 # i should check that no repeted Hubs or Conection! -done
 #if the graph is not directed i have to change the depilcats check
 
+
 class Parser:
     def _parse_optional_part(self, optional_info: str) -> dict:
         """Parses the metadata brackets and returns a dict of kwargs."""

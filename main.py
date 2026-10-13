@@ -27,39 +27,42 @@
 
 # if __name__ == "__main__":
 #     main()
-from src.core.graph import Graph
-from src.core.pathfinder import SpaceTimePathfinder
-from src.core.reservation_table import ReservationTable
+#
+
 from src.parser.perse import Parser
-from src.core.simulator import SimulationPrinter
+from core.graph1 import Graph
+from src.core.reservation_table import ReservationTable
+from src.core.pathfinder import SpaceTimePathfinder
+from src.visualization.visualizer import PygameVisualizer
+
 
 def main():
+    map_file = "maps/challenger/01_the_impossible_dream.txt"
     parser = Parser()
-    raw_hubs, raw_connections, nb_drones = parser.parse("maps/challenger/01_the_impossible_dream.txt")
-    graph = Graph(raw_hubs, raw_connections)
+    raw_hubs, raw_connections, nb_drones = parser.parse(map_file)
 
+    graph = Graph(raw_hubs, raw_connections)
     start_hub = next(h.name for h in raw_hubs if h.is_start)
     end_hub = next(h.name for h in raw_hubs if h.is_end)
 
-    reservation_table = ReservationTable()
+    reservation_table = ReservationTable(start_hub=start_hub, goal_hub=end_hub)
     pathfinder = SpaceTimePathfinder(graph, reservation_table)
 
     all_drone_paths: dict[int, list[str]] = {}
 
-    print(f"--- ROUTING {nb_drones} DRONES ---")
     for drone_id in range(1, nb_drones + 1):
         path = pathfinder.find_path(start_hub, end_hub)
-
         if path is None:
-            print(f"Error: Could not find a valid route for Drone {drone_id}!")
+            print(f"Error: Could not route Drone {drone_id}")
             break
-
-        # Reserve space-time slots so later drones avoid collisions
         reservation_table.reserve_path(path)
         all_drone_paths[drone_id] = path
 
-        print(f"Drone {drone_id} Path ({len(path)} steps): {' -> '.join(path)}")
-    SimulationPrinter.print_turn_by_turn(all_drone_paths)
+    print(f"Solved map in {max(len(p) for p in all_drone_paths.values()) - 1} turns.")
+
+    # --- LAUNCH PYGAME VISUALIZER ---
+    visualizer = PygameVisualizer(graph, all_drone_paths)
+    visualizer.run()
 
 
 if __name__ == "__main__":
